@@ -53,6 +53,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             Err(e) => println!("[FAIL] Failed to reply to newly registered node {} {}", src, e),
                         }
                     }
+                    BYE => {
+                        let mut nodes = net_nodes.lock().await;
+
+                        match sock.send_to(&ACK_PACKET, src).await {
+                            Ok(_) => {
+                                println!("[OK] Node {} has been unregistered", src);
+                                nodes.remove(&src);
+                            }
+                            Err(e) => {
+                                println!("[FAIL] Failed to send reply back, node was unregistered tho {} {}", src, e);
+                            }
+                        }
+                    }
+                    
                 }
             }
         }
