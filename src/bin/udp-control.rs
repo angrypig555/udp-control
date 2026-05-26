@@ -1,6 +1,6 @@
 use tokio::net::UdpSocket;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use udp_control::{ACK_PACKET, PROTOCOL};
+use udp_control::{ACK_PACKET, HEALTH_CHECK, PROTOCOL};
 use std::net::SocketAddr;
 use std::io::Write;
 use std::collections::HashSet;
@@ -55,14 +55,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                     BYE => {
                         let mut nodes = net_nodes.lock().await;
-
+                        nodes.remove(&src);
                         match sock.send_to(&ACK_PACKET, src).await {
                             Ok(_) => {
                                 println!("[OK] Node {} has been unregistered", src);
-                                nodes.remove(&src);
                             }
                             Err(e) => {
                                 println!("[FAIL] Failed to send reply back, node was unregistered tho {} {}", src, e);
+                            }
+                        }
+                    }
+                    ACK => {
+
+                    }
+                    HEALTH_CHECK => {
+                        match sock.send_to(&ACK_PACKET, src).await {
+                            Ok(_) => {
+
+                            }
+                            Err(e) => {
+                                println!("[FAIL] Failed to reply to health check from node {} {}", src, e);
                             }
                         }
                     }
