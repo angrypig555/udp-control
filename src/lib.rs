@@ -14,3 +14,4 @@ pub const HEALTH_CHECK: u8 = 0xFF;
 pub const FAIL: u8 = 0x55;
 pub const ACK_PACKET: [u8; 2] = [PROTOCOL, ACK];
 pub const ALERT: u8 = 0xAA;
+pub const RESTART: u8 = 0xBB;

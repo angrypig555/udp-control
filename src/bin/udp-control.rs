@@ -1,6 +1,6 @@
 use tokio::net::UdpSocket;
 use tokio::io::{AsyncBufReadExt, BufReader};
-use udp_control::{ACK_PACKET, HEALTH_CHECK, PROTOCOL};
+use udp_control::{ACK_PACKET, HEALTH_CHECK, PROTOCOL, RESTART, BYE, GREET, ACK};
 use std::net::SocketAddr;
 use std::io::Write;
 use std::collections::HashSet;
@@ -40,6 +40,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     println!("[FAIL] Got connection but the protocol was invalid");
                     continue;
                 }
+                let mut nodes_is_registered = net_nodes.lock().await;
+                if !nodes_is_registered.contains(&src) && (command == RESTART || command == HEALTH_CHECK || command == ACK) {
+                    println!("[WARNING] Unregistered node {} attempted to execute command without registering", src);
+                }
                 match command {
                     GREET => {
                         let mut nodes = net_nodes.lock().await;
@@ -75,6 +79,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                             Err(e) => {
                                 println!("[FAIL] Failed to reply to health check from node {} {}", src, e);
+                            }
+                        }
+                    }
+                    RESTART => {
+                        let invalid = [0x09, 0x55];
+                        match sock.send_to(&invalid, src).await {
+                            Ok(_) => {
+                                println!("[WARN] Received restart command but that cannot be done on a manager. Received from {}", src);
+                            }
+                            Err(e) => {
+                                println!("[FAIL] Failed to reply to node {} {}", src , e);
+                            }
+                        }
+                    }
+                    _ => {
+                        let invalid = [0x09, 0x55];
+                        match sock.send_to(&invalid, src).await {
+                            Ok(_) => {
+                                println!("[WARN] Received invalid command from node");
+                            }
+                            Err(e) => {
+                                println!("[FAIL] Failed to reply to node {} {}", src, e);
                             }
                         }
                     }

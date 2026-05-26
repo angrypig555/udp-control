@@ -19,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("[OK] Starting listener");
     let sock = UdpSocket::bind("0.0.0.0:0")?;
     let greeting = [PROTOCOL, GREET];
-    sock.send_to(&greeting, &ip);
+    sock.send_to(&greeting, &ip)?;
     let mut buf_greet = [0; 10];
     let (amt_greet, src_greet) = sock.recv_from(&mut buf_greet)?;
     if amt_greet != 2 {
